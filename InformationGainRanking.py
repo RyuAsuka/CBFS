@@ -4,15 +4,9 @@ import seaborn as sns
 import time
 import logging
 from tqdm import tqdm
+from my_logger import set_logger
 
-# Configure logger
-logger = logging.getLogger('igr')
-logger.setLevel(logging.INFO)
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-formatter = logging.Formatter(fmt='[%(asctime)s][%(levelname)s] %(message)s')
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+logger = set_logger('ranking')
 
 NEED_DISCRETIZE = True
 

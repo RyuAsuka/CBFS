@@ -1,26 +1,18 @@
-import logging
 import time
 import pandas as pd
+from my_logger import set_logger
 from FeatureClustering import feature_clustering
 from FeatureClustering import find_cluster_center
 from InformationGainRanking import get_information_gain
 from InformationGainRanking import discretizer
 
-# Configure logger
-logger = logging.getLogger('main')
-logger.setLevel(logging.INFO)
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-formatter = logging.Formatter(fmt='[%(asctime)s][%(levelname)s] %(message)s')
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
 
 WORK_DIR = 'E:\\data\\result\\'
 DATA_FILES = ['']
 
 
 if __name__ == '__main__':
-
+    logger = set_logger('main')
     # Reading data and preprocessing
     logger.info('Reading data...')
     start = time.time()

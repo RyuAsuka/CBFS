@@ -5,16 +5,9 @@ The implementation of feature clustering algorithm.
 import pandas as pd
 import numpy as np
 import time
-import logging
+from my_logger import set_logger
 
-# Configure logger
-logger = logging.getLogger('debug')
-logger.setLevel(logging.INFO)
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)
-formatter = logging.Formatter(fmt='[%(asctime)s][%(levelname)s] %(message)s')
-stream_handler.setFormatter(formatter)
-logger.addHandler(stream_handler)
+logger = set_logger('clustering')
 
 
 def is_in_cluster(f, all_clusters):
