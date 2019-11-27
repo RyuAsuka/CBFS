@@ -95,42 +95,44 @@ def discretizer(dataframe):
 
 
 if __name__ == '__main__':
-    logger.info('Reading data set...')
-    data_set_file = 'E:\\data\\result\\dataset_random_split1_clustered.csv'
-    start = time.time()
-    data = pd.read_csv(data_set_file)
-    end = time.time()
-    logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
+    for i in range(1, 5):
+        logger.info(f'Reading data set {i}...')
+        data_set_file = 'E:\\data\\result\\dataset_random_split4_clustered.csv'
+        start = time.time()
+        data = pd.read_csv(data_set_file)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
 
-    if NEED_DISCRETIZE:
-        logger.info('Discretizing the data...')
-        data2 = discretizer(data.copy())
-        logger.info('Done!')
+        if NEED_DISCRETIZE:
+            logger.info('Discretizing the data...')
+            data2 = discretizer(data.copy())
+            logger.info('Done!')
 
-    logger.info('Start calculating information gain of all columns...')
-    start = time.time()
-    ig = get_information_gain(data2, data2.shape[0])
-    end = time.time()
-    logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
+        logger.info('Start calculating information gain of all columns...')
+        start = time.time()
+        ig = get_information_gain(data2, data2.shape[0])
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
 
-    logger.info(f'The information gains{" (discretized) " if NEED_DISCRETIZE else " "}are: {ig}')
+        logger.info(f'The information gains{" (discretized) " if NEED_DISCRETIZE else " "}are: {ig}')
 
-    logger.info('Start Calculating Information gain ratio...')
-    igr = ig.copy()
-    start = time.time()
-    for key in igr.keys():
-        igr[key] /= entropy(data2, key, data.shape[0])
-    end = time.time()
-    logger.info(f'Info_gain_ratio{" (discretized) " if NEED_DISCRETIZE else " "}: {igr}, ')
-    logger.info(f'Time elaplsed: {(end - start) : 0.02f}s')
+        logger.info('Start Calculating Information gain ratio...')
+        igr = ig.copy()
+        start = time.time()
+        for key in igr.keys():
+            igr[key] /= entropy(data2, key, data.shape[0])
+        end = time.time()
+        logger.info(f'Info_gain_ratio{" (discretized) " if NEED_DISCRETIZE else " "}: {igr}, ')
+        logger.info(f'Time elaplsed: {(end - start) : 0.02f}s')
 
-    logger.info('Combine results...')
-    ig_matrix = pd.concat([pd.DataFrame(ig, index=['Info Gain']), pd.DataFrame(igr, index=['Info Gain Ratio'])]).T
-    ig_mean = ig_matrix['Info Gain'].mean()
-    result = ig_matrix[ig_matrix['Info Gain'] > ig_mean].sort_values(by='Info Gain Ratio', ascending=False).iloc[:10, :]
-    logger.info(f'result:\n{result}')
-    new_columns = result.index.tolist()
-    new_columns.append('Label')
-    logger.info('Creating new data set...')
-    new_data = data[new_columns]
-    new_data.to_csv('E:\\data\\result\\new_dataset_1.csv', index=False)
+        logger.info('Combine results...')
+        ig_matrix = pd.concat([pd.DataFrame(ig, index=['Info Gain']), pd.DataFrame(igr, index=['Info Gain Ratio'])]).T
+        ig_mean = ig_matrix['Info Gain'].mean()
+        result = ig_matrix[ig_matrix['Info Gain'] > ig_mean].sort_values(by='Info Gain Ratio', ascending=False).iloc[
+                 :10, :]
+        logger.info(f'result:\n{result}')
+        new_columns = result.index.tolist()
+        new_columns.append('Label')
+        logger.info('Creating new data set...')
+        new_data = data[new_columns]
+        new_data.to_csv(f'E:\\data\\result\\new_dataset_{i}.csv', index=False)

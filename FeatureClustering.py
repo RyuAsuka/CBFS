@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import time
 from my_logger import set_logger
+from TimeFormatter import time_formatter
 
 logger = set_logger('clustering')
 
@@ -168,41 +169,41 @@ def find_cluster_center(data, cluster_set):
 
 
 if __name__ == '__main__':
-    # Reading data and preprocessing
-    logger.info('Reading data...')
-    start = time.time()
-    input_data = 'E:\\data\\result\\dataset_random_split1_modified.csv'
-    df = pd.read_csv(input_data)
-    logger.info(f'Done! time elapsed: {(time.time() - start):0.02f} s')
-    logger.info(f'Dataset has {(len(df.columns) - 1):d} features.')
+    for i in range(1, 5):
+        # Reading data and preprocessing
+        logger.info(f'Reading data {i}...')
+        start = time.time()
+        input_data = f'E:\\data\\result\\dataset_random_split{i}_modified.csv'
+        df = pd.read_csv(input_data)
+        logger.info(f'Done! time elapsed: {time_formatter(time.time() - start)} s')
+        logger.info(f'Dataset has {(len(df.columns) - 1):d} features.')
 
-    # Feature Clustering
-    columns = df.columns[:-1]
-    logger.info('Running Feature Clustering...')
-    start = time.time()
-    C = feature_clustering(df, columns, 0.9)
-    end = time.time()
-    logger.info(f'Done! Time elapsed: {(end-start):0.02f} s')
-    logger.info('The clustered features are:')
-    for c in C:
-        logger.info(f'{c}')
-    logger.info(f"The cluster set have {len(C):d} clusters.")
-    logger.info(f"All clusters have {sum([len(x) for x in C]):d} features")
+        # Feature Clustering
+        columns = df.columns[:-1]
+        logger.info('Running Feature Clustering...')
+        start = time.time()
+        C = feature_clustering(df, columns, 0.9)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {time_formatter(end - start)} s')
+        logger.info('The clustered features are:')
+        for c in C:
+            logger.info(f'{c}')
+        logger.info(f"The cluster set have {len(C):d} clusters.")
+        logger.info(f"All clusters have {sum([len(x) for x in C]):d} features")
 
-    # Find cluster centers
-    logger.info('Running finding cluster center algorithm...')
-    start = time.time()
-    cluster_centers = find_cluster_center(df, C)
-    end = time.time()
-    logger.info(f"Done! The clustered centers are: {cluster_centers}")
-    logger.info(f"Time elapsed: {(end-start):0.02f}s")
-    cluster_centers.append('Label')
+        # Find cluster centers
+        logger.info('Running finding cluster center algorithm...')
+        start = time.time()
+        cluster_centers = find_cluster_center(df, C)
+        end = time.time()
+        logger.info(f"Done! The clustered centers are: {cluster_centers}")
+        logger.info(f"Time elapsed: {time_formatter(end - start)}s")
+        cluster_centers.append('Label')
 
-    # Save the data set
-    logger.info('Saving the data set...')
-    start = time.time()
-    df = df[cluster_centers]
-    df.to_csv('E:\\data\\result\\dataset_random_split1_clustered.csv', index=False)
-    end = time.time()
-    logger.info(f'Done! Time elapsed: {(end-start):0.02f}s')
-    # Information gain ranking algorithm
+        # Save the data set
+        logger.info('Saving the data set...')
+        start = time.time()
+        df = df[cluster_centers]
+        df.to_csv(f'E:\\data\\result\\dataset_random_split{i}_clustered.csv', index=False)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {time_formatter(end - start)}s')

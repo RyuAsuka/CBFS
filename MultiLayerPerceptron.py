@@ -1,4 +1,6 @@
+import pandas as pd
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from collections import Counter
 from sklearn import datasets
 import torch.nn.functional as Fun
@@ -7,13 +9,24 @@ import matplotlib.pyplot as plt
 import torch
 
 # 数据准备
-dataset = datasets.load_iris()
-dataut = dataset['data']
-priciple = dataset['target']
-input = torch.FloatTensor(dataset['data'])
-label = torch.LongTensor(dataset['target'])
-print(input)
-print(label)
+# dataset = datasets.load_iris()
+# dataut = dataset['data']
+# priciple = dataset['target']
+# input = torch.FloatTensor(dataset['data'])
+# label = torch.LongTensor(dataset['target'])
+# print(input)
+# print(label)
+data = pd.read_csv("E:\\data\\result\\dataset_random_split1_modified.csv")
+n_feature = data.shape[1] - 1
+n_output = data['Label'].value_counts().shape[0]
+n_hidden = 2 * n_feature
+print(n_feature, n_hidden, n_output)
+data_x = data[data.columns[:-1]].to_numpy()
+data_y = data['Label']
+encoder = LabelEncoder()
+data_y = encoder.fit_transform(data_y)
+input = torch.FloatTensor(data_x)
+label = torch.LongTensor(data_y)
 
 
 # 定义BP神经网络
@@ -24,12 +37,12 @@ class Net(torch.nn.Module):
         self.out = torch.nn.Linear(n_hidden, n_output)  # output layer
 
     def forward(self, x):
-        x = Fun.relu(self.hidden(x))  # activation function for hidden layer we choose sigmoid
+        x = torch.sigmoid(self.hidden(x))  # activation function for hidden layer we choose sigmoid
         x = self.out(x)
         return x
 
 
-net = Net(n_feature=4, n_hidden=20, n_output=3)
+net = Net(n_feature=n_feature, n_hidden=n_hidden, n_output=n_output)
 optimizer = torch.optim.SGD(net.parameters(), lr=0.02)  # SGD: 随机梯度下降
 loss_func = torch.nn.CrossEntropyLoss()  # 针对分类问题的损失函数
 
@@ -46,4 +59,4 @@ prediction = torch.max(out, 1)[1]  # 1返回index  0返回原值
 pred_y = prediction.data.numpy()
 target_y = label.data.numpy()
 accuracy = float((pred_y == target_y).astype(int).sum()) / float(target_y.size)
-print("莺尾花预测准确率", accuracy)
+print("accuracy", accuracy)
