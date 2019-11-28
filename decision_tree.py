@@ -1,17 +1,21 @@
 import time
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from my_logger import set_logger
-from sklearn.preprocessing import LabelEncoder
+from TimeFormatter import time_formatter
+from sklearn.preprocessing import LabelEncoder, label_binarize
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedShuffleSplit, cross_val_score
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 from sklearn.metrics import classification_report
+from sklearn.metrics import roc_curve, auc
+
 
 logger = set_logger('dt')
 for i in range(1, 11):
-    switch = 0
+    switch = 1
     logger.info(f'Reading data {i}...')
     if switch == 1:
         data = pd.read_csv(f"E:\\data\\result\\new_dataset_{i}.csv")
@@ -48,11 +52,11 @@ for i in range(1, 11):
     end2 = time.time()
     logger.info(f'Test complete. Time elapsed: {(end2 - start)}s')
     logger.info('Confusion Matrix:')
-    print(confusion_matrix(y_test, y_predict, labels=pd.unique(y_test)))
+    logger.info(f'\n{(confusion_matrix(y_test, y_predict, labels=pd.unique(y_test)))}')
     logger.info(f'Accuracy:  {accuracy_score(y_test, y_predict)}')
     logger.info(f'Precision: {precision_score(y_test, y_predict, average="macro")}')
     logger.info(f'Recall : {recall_score(y_test, y_predict, average="macro")}')
     logger.info(f"F1 score: {f1_score(y_test, y_predict, average='macro')} ")
     logger.info('Feature Importances:')
-    print(dtc.feature_importances_)
-    print(classification_report(y_test, y_predict, target_names=encoder.classes_))
+    logger.info(f"\n{dtc.feature_importances_}")
+    logger.info(f"\n{classification_report(y_test, y_predict, target_names=encoder.classes_)}")

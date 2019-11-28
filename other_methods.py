@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 
 logger = set_logger('chi2', 'other_methods.log')
 # logger.info(f'Using Method: {method.__name__}')
-for i in range(1, 2):
+for i in range(5, 6):
     logger.info(f'Reading data {i}...')
     data = pd.read_csv(f"E:\\data\\result\\dataset_random_split{i}_modified.csv")
     logger.info('Done!')
@@ -23,24 +23,20 @@ for i in range(1, 2):
     label_encoder = LabelEncoder()
     y = label_encoder.fit_transform(y)
 
-    # selector = SelectKBest(method, k=10)
-    selector = RFE(estimator=GradientBoostingClassifier(random_state=int(time.time())), n_features_to_select=10)
+    selector = SelectKBest(chi2, k=10)
     try:
         start = time.time()
         logger.info('Selecting features...')
         selector.fit(X, y)
         end = time.time()
         logger.info(f'Done! Time elapsed: {time_formatter(end - start)}')
-        logger.info(selector.support_)
-        X_new = selector.transform(X, y)
-        print(X_new.shape)
-        print(selector.scores_)
-        print(X_new)
-        feature_score = []
-        for j in range(len(selector.scores_)):
-            feature_score.append((data.columns[j], selector.scores_[j]))
-        feature_score.sort(key=lambda x: x[1], reverse=True)
-        print(feature_score[:10])
+        support = selector.get_support(indices=True)
+        logger.info(support)
+        X_new = selector.transform(X)
+        # print(X_new.shape)
+        # print(selector.scores_)
+        # print(X_new)
+        logger.info([data.columns[j] for j in support])
 
         clf = DecisionTreeClassifier(criterion='entropy')
         split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=int(time.time()))
@@ -49,10 +45,10 @@ for i in range(1, 2):
             X_train, X_test = X_new[train_index], X_new[test_index]
             y_train, y_test = y[train_index], y[test_index]
 
-        print(X_train)
-        print(y_train)
-        print(X_test)
-        print(y_test)
+        # print(X_train)
+        # print(y_train)
+        # print(X_test)
+        # print(y_test)
         logger.info('Training...')
         start = time.time()
         clf.fit(X_train, y_train)
@@ -68,4 +64,4 @@ for i in range(1, 2):
         logger.info(f'Recall : {recall_score(y_test, y_predict, average="macro")}')
         logger.info(f"F1 score: {f1_score(y_test, y_predict, average='macro')} ")
     except ValueError as e:
-        logger.warning(f'File {i}' + str(e))
+        logger.warning(f'File {i}: ' + str(e))
