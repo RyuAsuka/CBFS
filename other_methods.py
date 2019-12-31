@@ -13,7 +13,8 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 
 logger = set_logger('chi2', 'other_methods.log')
 # logger.info(f'Using Method: {method.__name__}')
-for i in range(5, 6):
+time_usage = []
+for i in range(1, 11):
     logger.info(f'Reading data {i}...')
     data = pd.read_csv(f"E:\\data\\result\\dataset_random_split{i}_modified.csv")
     logger.info('Done!')
@@ -28,8 +29,8 @@ for i in range(5, 6):
         start = time.time()
         logger.info('Selecting features...')
         selector.fit(X, y)
-        end = time.time()
-        logger.info(f'Done! Time elapsed: {time_formatter(end - start)}')
+        # end = time.time()
+        # logger.info(f'Done! Time elapsed: {time_formatter(end - start)}')
         support = selector.get_support(indices=True)
         logger.info(support)
         X_new = selector.transform(X)
@@ -50,13 +51,14 @@ for i in range(5, 6):
         # print(X_test)
         # print(y_test)
         logger.info('Training...')
-        start = time.time()
+        # start = time.time()
         clf.fit(X_train, y_train)
         end1 = time.time()
         logger.info(f'Training complete. Time elapsed: {(end1 - start)}s')
+        time_usage.append(end1 - start)
         y_predict = clf.predict(X_test)
-        end2 = time.time()
-        logger.info(f'Test complete. Time elapsed: {(end2 - start)}s')
+        # end2 = time.time()
+        # logger.info(f'Test complete. Time elapsed: {(end2 - start)}s')
         logger.info('Confusion Matrix:')
         logger.info(f'\n{confusion_matrix(y_test, y_predict, labels=pd.unique(y_test))}')
         logger.info(f'Accuracy:  {accuracy_score(y_test, y_predict)}')
@@ -65,3 +67,5 @@ for i in range(5, 6):
         logger.info(f"F1 score: {f1_score(y_test, y_predict, average='macro')} ")
     except ValueError as e:
         logger.warning(f'File {i}: ' + str(e))
+
+print(time_usage)
