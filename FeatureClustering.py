@@ -169,49 +169,41 @@ def find_cluster_center(data, cluster_set):
 
 
 if __name__ == '__main__':
-    time_usage = []
-    for i in range(1, 11):
-        time_usage_i = []
+    for delta in [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]:
         # Reading data and preprocessing
-        logger.info(f'Reading data {i}...')
+        logger.info(f'Reading data...')
         start = time.time()
-        input_data = f'E:\\data\\result\\dataset_random_split{i}_modified.csv'
-        original_data = pd.read_csv(input_data)
+        input_data = f'X_train.csv'  # Please modifed to your own preprocessed data
+        df = pd.read_csv(input_data)
         logger.info(f'Done! time elapsed: {time_formatter(time.time() - start)} s')
-        logger.info(f'Dataset has {(len(original_data.columns) - 1):d} features.')
-        for delta in np.arange(0.7, 0.99, 0.05):
-            # Feature Clustering
-            df = original_data.copy()
-            columns = df.columns[:-1]
-            logger.info(f'Running Feature Clustering in delta={delta}...')
-            start = time.time()
-            C = feature_clustering(df, columns, delta)
-            # end = time.time()
-            # logger.info(f'Done! Time elapsed: {time_formatter(end - start)} s')
-            logger.info('The clustered features are:')
-            for c in C:
-                logger.info(f'{c}')
-            logger.info(f"The cluster set have {len(C):d} clusters.")
-            logger.info(f"All clusters have {sum([len(x) for x in C]):d} features")
+        logger.info(f'Dataset has {(len(df.columns)):d} features.')
 
-            # Find cluster centers
-            logger.info('Running finding cluster center algorithm...')
-            # start = time.time()
-            cluster_centers = find_cluster_center(df, C)
-            end = time.time()
-            logger.info(f"Done! The clustered centers are: {cluster_centers}")
-            logger.info(f"Time elapsed: {time_formatter(end - start)}s")
-            time_usage_i.append(end - start)
-            cluster_centers.append('Label')
-        time_usage.append(time_usage_i)
+        columns = df.columns
+        logger.info('Running Feature Clustering...')
+        start = time.time()
+        C = feature_clustering(df, columns, delta)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {time_formatter(end - start)} s')
+        logger.info('The clustered features are:')
+        for c in C:
+            logger.info(f'{c}')
+        logger.info(f"The cluster set have {len(C):d} clusters.")
+        logger.info(f"All clusters have {sum([len(x) for x in C]):d} features")
+        logger.info(f"Feature reduction ratio = {len(C) / len(df.columns)}")
 
-    print(time_usage)
+        # Find cluster centers
+        logger.info('Running finding cluster center algorithm...')
+        start = time.time()
+        cluster_centers = find_cluster_center(df, C)
+        end = time.time()
+        logger.info(f"Done! The clustered centers are: {cluster_centers}")
+        logger.info(f"Time elapsed: {time_formatter(end - start)}s")
+        # cluster_centers.append('class')
 
-    # Save the data set
-    # logger.info('Saving the data set...')
-    # start = time.time()
-    # df = df[cluster_centers]
-    # df.to_csv(f'E:\\data\\result\\clustering_result\\dataset_random_split{i}_clustered_{delta}.csv',
-    #           index=False)
-    # end = time.time()
-    # logger.info(f'Done! Time elapsed: {time_formatter(end - start)}s')
+        # Save the data set
+        logger.info('Saving the data set...')
+        start = time.time()
+        df = df[cluster_centers]
+        df.to_csv(f'X_train_{delta}.csv', index=False)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {time_formatter(end - start)}s')

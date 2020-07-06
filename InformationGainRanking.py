@@ -1,12 +1,13 @@
-import pandas as pd
-import numpy as np
-import seaborn as sns
 import time
-import logging
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from my_logger import set_logger
 
-logger = set_logger('ranking')
+logger = set_logger('ranking', 'ranking2.log')
+
+NEED_DISCRETIZE = False
+
 
 def entropy(df, column, nrows):
     """
@@ -32,7 +33,7 @@ def entropy(df, column, nrows):
     return -logged_value_prob.sum()
 
 
-def get_information_gain(df, nrows):
+def get_information_gain(df, label_name, nrows):
     """
     Calculate the information gain of each feature.
 
@@ -40,6 +41,8 @@ def get_information_gain(df, nrows):
     ---------
         df : pandas.DataFrame
             The data set organized by pandas.DataFrame.
+        label_name : str
+            The name of label column
         nrows : int
             The number of rows of the data set.
 
@@ -49,17 +52,17 @@ def get_information_gain(df, nrows):
             The information gain of each feature. The key is feature name and the value is its information gain.
     """
     info_gains = {}
-    ent_label = entropy(df, 'Label', nrows)
-    # for column in tqdm(df.columns[:-1], total=len(df.columns) - 1):
-    for column in df.columns[:-1]:
+    ent_label = entropy(df, label_name, nrows)
+    for column in tqdm(df.columns[:-1], total=len(df.columns) - 1, ncols=80):
+        # for column in df.columns[:-1]:
         groups = df.groupby(column)
         column_prob = df[column].value_counts().astype('float64') / nrows
         tablen = column_prob.shape[0]
         cond_ent = 0.0
-        # for name, group in tqdm(groups, total=tablen):
-        for name, group in groups:
+        for name, group in tqdm(groups, total=tablen, ncols=80, desc=column):
+            # for name, group in groups:
             group_nrows = group.shape[0]
-            prob_label = group['Label'].value_counts().astype('float64') / group_nrows
+            prob_label = group[label_name].value_counts().astype('float64') / group_nrows
             logged_prob_label = prob_label * np.log2(prob_label)
             try:
                 ent = column_prob[name] * logged_prob_label.sum()
@@ -70,7 +73,7 @@ def get_information_gain(df, nrows):
     return info_gains
 
 
-def discretizer(dataframe, bins):
+def discretizer(dataframe):
     """
     Discretize the data set.
 
@@ -85,59 +88,69 @@ def discretizer(dataframe, bins):
             The converted data frame.
     """
     for col in dataframe.columns[:-1]:
-        dataframe[col] = pd.cut(dataframe[col], bins=bins, labels=False)
+        if col == 'Dst Port':
+            bins = [0, 1000, 10000, 32768, 65536]
+            dataframe[col] = pd.cut(dataframe[col], bins=bins, right=False, labels=False)
+        else:
+            dataframe[col] = pd.cut(dataframe[col], bins=100, labels=False)
     return dataframe
 
 
+def check_data(data, label):
+    return data.shape[0] == label.shape[0]
+
+
 if __name__ == '__main__':
-    time_usage = []
-    for delta in [0.7, 0.75, 0.8, 0.85, 0.9, 0.95]:
-        time_usage_delta = []
-        for i in range(1, 11):
-            logger.info(f'Reading data set {i}, delta={delta}...')
-            data_set_file = f'E:\\data\\result\\clustering_result\\dataset_random_split{i}_clustered_{delta}.csv'
-            start = time.time()
-            data = pd.read_csv(data_set_file)
-            end = time.time()
-            logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
+    label_type = 'binary'  # 'binary' or 'multiclass'
+    for delta in [0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]:
+        logger.info(f'Reading data set with delta={delta}...')
+        data_set_file = f"X_train_{delta}.csv"
+        if label_type == 'binary':
+            label_file = f"y_train_binary.csv"
+        elif label_type == 'multiclass':
+            label_file = f"y_train_multiclass.csv"
+        start = time.time()
+        data = pd.read_csv(data_set_file)
+        labels = pd.read_csv(label_file)
+        data = pd.concat([data, labels['label']], axis=1)
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
 
-            NEED_DISCRETIZE = True
-            if NEED_DISCRETIZE:
-                logger.info('Discretizing the data...')
-                data2 = discretizer(data.copy(), bins=100)
-                logger.info('Done!')
-            else:
-                data2 = data.copy()
+        if not check_data(data, labels):
+            print(f'Train data and label shape not match: {data.shape[0], labels.shape[0]}')
+            exit(-1)
 
-            logger.info('Start calculating information gain of all columns...')
-            start = time.time()
-            ig = get_information_gain(data2, data2.shape[0])
-            #  = time.time()
-            # logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
+        if NEED_DISCRETIZE:
+            logger.info('Discretizing the data...')
+            data2 = discretizer(data.copy())
+            logger.info('Done!')
+        else:
+            data2 = data.copy()
 
-            logger.info(f'The information gains{" (discretized) " if NEED_DISCRETIZE else " "}are: {ig}')
+        logger.info('Start calculating information gain of all columns...')
+        start = time.time()
+        ig = get_information_gain(data2, 'label', data2.shape[0])
+        end = time.time()
+        logger.info(f'Done! Time elapsed: {(end - start):0.02f}s.')
 
-            logger.info('Start Calculating Information gain ratio...')
-            igr = ig.copy()
-            # start = time.time()
-            for key in igr.keys():
-                igr[key] /= entropy(data2, key, data.shape[0])
-            end = time.time()
-            logger.info(f'Info_gain_ratio{" (discretized) " if NEED_DISCRETIZE else " "}: {igr}, ')
-            logger.info(f'Time elaplsed: {(end - start) : 0.02f}s')
-            time_usage_delta.append(end - start)
+        logger.info(f'The information gains{" (discretized) " if NEED_DISCRETIZE else " "}are: {ig}')
 
-            logger.info('Combine results...')
-            ig_matrix = pd.concat(
-                [pd.DataFrame(ig, index=['Info Gain']), pd.DataFrame(igr, index=['Info Gain Ratio'])]).T
-            ig_mean = ig_matrix['Info Gain'].mean()
-            result = ig_matrix[ig_matrix['Info Gain'] > ig_mean].sort_values(by='Info Gain Ratio',
-                                                                             ascending=False).iloc[:10, :]
-            logger.info(f'result:\n{result}')
-            new_columns = result.index.tolist()
-            new_columns.append('Label')
-        time_usage.append(time_usage_delta)
-    print(time_usage)
-    # logger.info('Creating new data set...')
-    # new_data = data[new_columns]
-    # new_data.to_csv(f'E:\\data\\result\\new_data_sets\\new_dataset_{i}_{delta}.csv', index=False)
+        logger.info('Start Calculating Information gain ratio...')
+        igr = ig.copy()
+        start = time.time()
+        for key in igr.keys():
+            igr[key] /= entropy(data2, key, data.shape[0])
+        end = time.time()
+        logger.info(f'Info_gain_ratio{" (discretized) " if NEED_DISCRETIZE else " "}: {igr}, ')
+        logger.info(f'Time elaplsed: {(end - start) : 0.02f}s')
+
+        logger.info('Combine results...')
+        ig_matrix = pd.concat([pd.DataFrame(ig, index=['Info Gain']), pd.DataFrame(igr, index=['Info Gain Ratio'])]).T
+        ig_mean = ig_matrix['Info Gain'].mean()
+        result = ig_matrix[ig_matrix['Info Gain'] > ig_mean].sort_values(by='Info Gain Ratio',
+                                                                         ascending=False).iloc[:10, :]
+        logger.info(f'result:\n{result}')
+        new_columns = result.index.tolist()
+        logger.info('Creating new data set...')
+        new_data = data[new_columns]
+        new_data.to_csv(f"X_new_{delta}_bin.csv", index=False)
